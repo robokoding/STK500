@@ -1,4 +1,4 @@
-stk500
+STK500
 ======
 
-stk500 implementation
+STK500 implementations
