@@ -7,14 +7,14 @@ import bluetooth as bt
 # define a rfcomm bluetooth connection
 sock = bt.BluetoothSocket(bt.RFCOMM)
 # connect to the bluetooth device
-sock.connect(("98:D3:31:B1:CA:BF", 1))
+sock.connect(("98:D3:31:B1:CA:E9", 1))
 
 # get in sync with the AVR
 for i in range(5):
-  print "syncing"
-  sock.send('\x30') # STK_GET_SYNC
-  sock.send('\x20') # STK_CRC_EOP
-  time.sleep(0.05)
+	print "syncing"
+	sock.send('\x30') # STK_GET_SYNC
+	sock.send('\x20') # STK_CRC_EOP
+	time.sleep(0.05)
 
 # receive sync ack
 print "receiving sync ack"
@@ -23,7 +23,7 @@ ok = sock.recv(1) # STK_OK
 
 # check received ack
 if insync == '\x14' and ok == '\x10':
-  print "insync"
+	print "insync"
 
 # get the MAJOR version of the bootloader
 print "getting the MAJOR version of the bootloader"
@@ -40,7 +40,7 @@ ok = sock.recv(1) # STK_OK
 
 # check received sync ack
 if insync == '\x14' and ok == '\x10':
-  print "insync"
+	print "insync"
 
 # get the MINOR version of the bootloader
 print "getting the MINOR version of the bootloader"
@@ -57,7 +57,7 @@ ok = sock.recv(1) # STK_OK
 
 # check received sync ack
 if insync == '\x14' and ok == '\x10':
-  print "insync"
+	print "insync"
 
 print "bootloader version %s.%s" % (ord(major), ord(minor))
 
@@ -74,7 +74,7 @@ ok = sock.recv(1) # STK_OK
 
 # check received sync ack
 if insync == '\x14' and ok == '\x10':
-  print "insync"
+	print "insync"
 
 # get device signature
 print "getting device signature"
@@ -89,7 +89,7 @@ ok = sock.recv(1) # STK_OK
 
 # check received sync ack
 if insync == '\x14' and ok == '\x10':
-  print "insync"
+	print "insync"
 
 print "device signature %s-%s-%s" % (ord(signature[0]), ord(signature[1]), ord(signature[2]))
 
@@ -100,61 +100,64 @@ address = 0
 program = open("main.hex", "rb")
 
 while True:
-  # calculate page address
-  laddress = chr(address % 256)
-  haddress = chr(address / 256)
-  address += 64
+	# calculate page address
+	laddress = chr(address % 256)
+	haddress = chr(address / 256)
+	address += 64
 
-  # load page address
-  print "loading page address"
-  sock.send('\x55') # STK_LOAD_ADDRESS
-  sock.send(laddress)
-  sock.send(haddress)
-  sock.send('\x20') # SYNC_CRC_EOP
-  #time.sleep(0.01)
+	# load page address
+	print "loading page address"
+	sock.send('\x55') # STK_LOAD_ADDRESS
+	sock.send(laddress)
+	sock.send(haddress)
+	sock.send('\x20') # SYNC_CRC_EOP
+	#time.sleep(0.01)
 
-  # receive sync ack
-  print "receiving sync ack"
-  insync = sock.recv(1) # STK_INSYNC
-  ok = sock.recv(1) # STK_OK
+	# receive sync ack
+	print "receiving sync ack"
+	insync = sock.recv(1) # STK_INSYNC
+	ok = sock.recv(1) # STK_OK
 
-  # check received sync ack
-  if insync == '\x14' and ok == '\x10':
-    print "insync"
+	# check received sync ack
+	if insync == '\x14' and ok == '\x10':
+		print "insync"
 
-  data = ""
-  # 16 bytes in a line 16 * 8 = 128
-  for i in range(8):
-    # just take the data part
-    data += program.readline()[9:][:-4]
+	data = ""
+	# the hex in the file is represented in char
+	# so we have to merge 2 chars into one byte
+	# 16 bytes in a line, 16 * 8 = 128
+	for i in range(8):
+		# just take the program data
+		data += program.readline()[9:][:-4]
 
-  size = chr(len(data)/2)
-  print "sending program page to write", ord(size)
-  sock.send('\x64') # STK_PROGRAM_PAGE
-  sock.send('\x00') # page size
-  sock.send(size) # page size
-  sock.send('\x46') # flash memory, 'F'
-  # while data left
-  while data:
-    # assemble a byte and send it
-    sock.send(chr(int(data[:2], 16)))
-    # chop of sent data
-    data = data[2:]
-  sock.send('\x20') # SYNC_CRC_EOP
-  #time.sleep(0.01)
+	# half the size
+	size = chr(len(data)/2)
+	print "sending program page to write", ord(size), "laddress", ord(laddress), "haddress", ord(haddress)
+	sock.send('\x64') # STK_PROGRAM_PAGE
+	sock.send('\x00') # page size
+	sock.send(size) # page size
+	sock.send('\x46') # flash memory, 'F'
+	# while data left
+	while data:
+		# assemble a byte and send it
+		sock.send(chr(int(data[:2], 16)))
+		# chop of sent data
+		data = data[2:]
+	sock.send('\x20') # SYNC_CRC_EOP
+	#time.sleep(0.01)
 
-  # receive sync ack
-  print "receiving sync ack"
-  insync = sock.recv(1) # STK_INSYNC
-  ok = sock.recv(1) # STK_OK
+	# receive sync ack
+	print "receiving sync ack"
+	insync = sock.recv(1) # STK_INSYNC
+	ok = sock.recv(1) # STK_OK
 
-  # check received sync ack
-  if insync == '\x14' and ok == '\x10':
-    print "insync"
+	# check received sync ack
+	if insync == '\x14' and ok == '\x10':
+		print "insync"
 
-  # when the whole program was uploaded
-  if size != '\x80':
-    break
+	# when the whole program was uploaded
+	if size != '\x80':
+		break
 
 # close the hex file
 program.close()
@@ -200,7 +203,7 @@ ok = sock.recv(1) # STK_OK
 
 # check received sync ack
 if insync == '\x14' and ok == '\x10':
-  print "insync"
+	print "insync"
 
 # close the bluetooth connection
 sock.close()
